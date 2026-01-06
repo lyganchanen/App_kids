@@ -1,0 +1,88 @@
+/* Базовая раскладка на полный экран */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background-color: #d3d3d3; /* светло-серый фон */
+  font-family: Arial, sans-serif;
+  overflow: hidden; /* статичная страница, без прокрутки */
+}
+
+#app {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Верхняя зона с картинками (80% высоты, 100% ширины) */
+#image-zone {
+  position: relative;
+  width: 100vw;
+  height: 80vh;
+  overflow: hidden; /* чтобы изображения не выходили за пределы */
+}
+
+/* Абсолютное позиционирование картинок внутри верхней зоны */
+.image-item {
+  position: absolute;
+  object-fit: contain;
+  pointer-events: none; /* исключаем случайные клики по картинке */
+}
+
+/* Нижняя зона с кнопками (20% высоты) */
+#control-zone {
+  height: 20vh;
+  width: 100vw;
+  background-color: #c0c0c0; /* лёгкий контраст с верхом */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Контейнер для пяти кнопок: равные отступы и адаптивная ширина */
+#buttons {
+  display: flex;
+  gap: 2vw; /* интервалы между кнопками */
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  padding: 0 2vw;
+}
+
+/*
+  Кнопки:
+  - Тёмно-серый фон
+  - Чёрные цифры
+  - Цифры занимают ~80% высоты кнопки
+  - По высоте — заполняют нижнюю зону (20vh)
+  - По ширине — близка к высоте (слегка прямоугольные, чтобы не идеально квадратные)
+*/
+.count-btn {
+  background-color: #4a4a4a; /* тёмно-серый */
+  color: #000000; /* чёрные цифры */
+  border: none;
+  border-radius: 2vh;
+  height: calc(100% - 4vh); /* небольшой внутренний отступ, чтобы не упираться */
+  aspect-ratio: 1.2 / 1; /* ширина чуть больше высоты, не квадратная */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Крупный размер цифры: около 80% высоты кнопки */
+.count-btn span {
+  font-weight: 700;
+  line-height: 1;
+  font-size: 16vh; /* 80% от 20vh = 16vh */
+  transform: translateY(0.02em); /* лёгкая коррекция вертикального выравнивания */
+}
+
+/* Состояние фокуса/активации для доступности */
+.count-btn:focus-visible {
+  outline: 0.6vh solid #000;
+}
