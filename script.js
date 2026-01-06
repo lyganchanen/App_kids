@@ -1,42 +1,20 @@
-/*
-  Логика:
-  - Генерируем от 1 до 20 изображений из набора /icons/icon1.png ... icon6.png
-  - Случайные позиции в пределах #image-zone, чтобы картинка полностью помещалась
-  - 5 категорий размеров (от очень маленькой до большой)
-  - Для равномерности распределяем количество по 5 категориям (насколько возможно)
-  - Внизу генерируем 5 кнопок: одна с правильным числом, четыре — случайные уникальные
-  - Клик по правильной кнопке -> новая генерация
-*/
+// === Конфигурация ===
+const ICON_COUNT = 10; // сколько картинок у тебя в папке icons
+const ICON_PATHS = Array.from({ length: ICON_COUNT }, (_, i) => `icons/icon${i + 1}.png`);
 
-// Конфигурация
-const ICON_PATHS = [
-  "icons/icon1.png",
-  "icons/icon2.png",
-  "icons/icon3.png",
-  "icons/icon4.png",
-  "icons/icon5.png",
-  "icons/icon6.png"
-    "icons/icon7.png"
-  "icons/icon8.png"
-  "icons/icon9.png"
-  "icons/icon10.png"
-];
-
-// Диапазон количества картинок
 const MIN_IMAGES = 1;
 const MAX_IMAGES = 20;
 
 // 5 категорий размеров (в процентах от высоты зоны)
-const SIZE_CATEGORIES_VH = [6, 10, 14, 18, 22]; // очень маленькая -> большая
+const SIZE_CATEGORIES_VH = [6, 10, 14, 18, 22];
 
-// Ссылки на элементы DOM
+// DOM элементы
 const imageZone = document.getElementById("image-zone");
 const buttonsContainer = document.getElementById("buttons");
 
-// Состояние
 let currentCount = 0;
 
-// Вспомогательные функции
+// === Вспомогательные функции ===
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -49,10 +27,6 @@ function shuffle(array) {
   return array;
 }
 
-/*
-  Равномерное распределение количества картинок по 5 категориям размеров.
-  Пример: n = 13 => [3,3,3,2,2] (или аналогично, чтобы сумма равнялась n)
-*/
 function distributeCountsEvenly(n, categories) {
   const base = Math.floor(n / categories);
   const remainder = n % categories;
@@ -60,13 +34,20 @@ function distributeCountsEvenly(n, categories) {
   for (let i = 0; i < remainder; i++) {
     result[i] += 1;
   }
-  return shuffle(result); // слегка перемешаем, чтобы размер не шёл ступенькой
+  return shuffle(result);
 }
 
-/*
-  Создаёт одну картинку с абсолютным позиционированием.
-  Гарантирует, что картинка целиком помещается в рабочей зоне.
-*/
+// Проверка пересечения с учётом отступа
+function isOverlapping(rect, placedRects, margin) {
+  return placedRects.some(r =>
+    !(rect.right + margin < r.left ||
+      rect.left - margin > r.right ||
+      rect.bottom + margin < r.top ||
+      rect.top - margin > r.bottom)
+  );
+}
+
+// Создание картинки с проверкой пересечений
 function createImageElement(src, vhSize, placedRects) {
   const img = document.createElement("img");
   img.src = src;
@@ -85,21 +66,19 @@ function createImageElement(src, vhSize, placedRects) {
     const targetWidthPx = targetHeightPx * aspectRatio;
 
     let leftPx, topPx, rect, tries = 0;
-    const margin = 5; // минимальное расстояние между картинками
+    const margin = 5;
 
     do {
       leftPx = Math.random() * Math.max(zoneWidthPx - targetWidthPx, 0);
       topPx = Math.random() * Math.max(zoneHeightPx - targetHeightPx, 0);
-      rect = { left: leftPx, top: topPx, right: leftPx + targetWidthPx, bottom: topPx + targetHeightPx };
+      rect = {
+        left: leftPx,
+        top: topPx,
+        right: leftPx + targetWidthPx,
+        bottom: topPx + targetHeightPx
+      };
       tries++;
-    } while (
-      placedRects.some(r =>
-        !(rect.right + margin < r.left ||
-          rect.left - margin > r.right ||
-          rect.bottom + margin < r.top ||
-          rect.top - margin > r.bottom)
-      ) && tries < 100
-    );
+    } while (isOverlapping(rect, placedRects, margin) && tries < 100);
 
     img.style.left = `${leftPx}px`;
     img.style.top = `${topPx}px`;
@@ -111,25 +90,15 @@ function createImageElement(src, vhSize, placedRects) {
   img.onerror = () => {
     img.remove();
   };
-
-  return img;
 }
 
-
-/*
-  Генерация сцены:
-  - выбираем случайное количество
-  - очищаем зону
-  - распределяем по размерным категориям
-  - создаём изображения
-  - генерируем кнопки
-*/
+// === Генерация сцены ===
 function generateScene() {
   currentCount = randomInt(MIN_IMAGES, MAX_IMAGES);
   imageZone.innerHTML = "";
 
   const perCategory = distributeCountsEvenly(currentCount, SIZE_CATEGORIES_VH.length);
-  const placedRects = []; // сюда будем сохранять позиции картинок
+  const placedRects = [];
 
   for (let c = 0; c < SIZE_CATEGORIES_VH.length; c++) {
     const sizeVh = SIZE_CATEGORIES_VH[c];
@@ -142,12 +111,7 @@ function generateScene() {
   renderButtons();
 }
 
-
-/*
-  Генерация пяти кнопок:
-  - одна правильная (currentCount)
-  - четыре уникальных неправильных из диапазона [1..20], не совпадающих с правильной
-*/
+// === Генерация кнопок ===
 function renderButtons() {
   buttonsContainer.innerHTML = "";
 
@@ -167,12 +131,9 @@ function renderButtons() {
     btn.appendChild(label);
 
     btn.addEventListener("click", () => {
-      const isCorrect = val === currentCount;
-      if (isCorrect) {
-        // Правильный ответ — перегенерируем сцену
+      if (val === currentCount) {
         generateScene();
       } else {
-        // Неправильный — можешь добавить визуальный отклик при желании
         btn.style.filter = "brightness(0.8)";
         setTimeout(() => (btn.style.filter = ""), 200);
       }
@@ -182,14 +143,10 @@ function renderButtons() {
   });
 }
 
-/*
-  Инициализация после загрузки страницы.
-  Обновляем сцену при ресайзе (чтобы позиции вписывались в новый размер).
-*/
+// === Инициализация ===
 function init() {
   generateScene();
   window.addEventListener("resize", () => {
-    // При изменении размеров перегенерируем сцену для корректной вёрстки
     generateScene();
   });
 }
