@@ -5,24 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Счёт картинок</title>
 
-  <!-- Цвета и базовый PWA-манифест (по желанию, можешь удалить если уже есть свой) -->
   <link rel="manifest" href="manifest.json" />
-
-  <!-- Стили -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="app">
-    <!-- Верхняя зона: 80% высоты экрана -->
     <section id="image-zone" aria-label="Зона изображений"></section>
-
-    <!-- Нижняя зона: 20% высоты экрана, 5 кнопок -->
     <section id="control-zone" aria-label="Зона управления">
       <div id="buttons"></div>
     </section>
   </div>
 
-  <!-- Скрипты -->
-  <script src="script.js"></script>
+  <!-- Important: defer ensures DOM is ready before script runs -->
+  <script defer src="script.js"></script>
 </body>
 </html>
