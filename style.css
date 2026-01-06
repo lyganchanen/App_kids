@@ -19,7 +19,7 @@ html, body {
 /* Top image zone: 80% height */
 #image-zone {
   position: relative;
-  width: 100vw;
+  width: 95vw;
   height: 80vh;
   overflow: hidden;
 }
