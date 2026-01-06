@@ -56,7 +56,7 @@ html, body {
 
 /* Buttons: dark gray background, black digits, large font */
 .count-btn {
-  background-color: #4a4a4a; /* dark gray */
+  background-color: #d3d3d3; /* dark 
   color: #000000; /* black digits */
   border: none;
   border-radius: 2vh;
