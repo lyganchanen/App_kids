@@ -1,20 +1,20 @@
-// ===== Config =====
-const ICON_COUNT = 10; // number of images in /icons folder
+// ===== Конфигурация =====
+const ICON_COUNT = 10; // количество картинок в папке /icons
 const ICON_PATHS = Array.from({ length: ICON_COUNT }, (_, i) => `icons/icon${i + 1}.png`);
 
 const MIN_IMAGES = 1;
 const MAX_IMAGES = 20;
 
-// 5 size categories in vh (relative to image zone height)
+// 5 категорий размеров (в процентах от высоты зоны)
 const SIZE_CATEGORIES_VH = [6, 10, 14, 18, 22];
 
-// DOM elements
+// DOM элементы
 const imageZone = document.getElementById("image-zone");
 const buttonsContainer = document.getElementById("buttons");
 
 let currentCount = 0;
 
-// ===== Utilities =====
+// ===== Вспомогательные функции =====
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -35,106 +35,96 @@ function distributeCountsEvenly(n, categories) {
   return shuffle(result);
 }
 
-function isOverlapping(rect, placedRects, margin) {
-  return placedRects.some(r =>
-    !(rect.right + margin < r.left ||
-      rect.left - margin > r.right ||
-      rect.bottom + margin < r.top ||
-      rect.top - margin > r.bottom)
-  );
-}
-
-// ===== Image creation with spacing =====
-function placeImage(src, vhSize, placedRects) {
+// ===== Размещение картинки по сетке =====
+function placeImage(src, vhSize, occupiedCells, gridSize = 40) {
   const img = document.createElement("img");
   img.src = src;
   img.className = "image-item";
   img.style.height = `${vhSize}vh`;
   img.style.position = "absolute";
-  img.style.visibility = "hidden";
 
-  imageZone.appendChild(img);
+  const zoneH = imageZone.clientHeight;
+  const zoneW = imageZone.clientWidth;
+  const targetH = zoneH * (vhSize / 100);
 
-  const onReady = () => {
-    const zoneH = imageZone.clientHeight;
-    const zoneW = imageZone.clientWidth;
-    const targetH = zoneH * (vhSize / 100);
+  const natW = img.naturalWidth || 100;
+  const natH = img.naturalHeight || 100;
+  const aspect = natW / natH;
+  const targetW = targetH * aspect;
 
-    // Natural sizes may be 0 if metadata is missing; guard with defaults
-    const natW = img.naturalWidth || 100;
-    const natH = img.naturalHeight || 100;
-    const aspect = natW / natH;
-    const targetW = targetH * aspect;
+  // Размер ячейки
+  const cellW = zoneW / gridSize;
+  const cellH = zoneH / gridSize;
 
-    let leftPx, topPx, rect;
-    let tries = 0;
-    const margin = 5;
-    const maxLeft = Math.max(zoneW - targetW, 0);
-    const maxTop = Math.max(zoneH - targetH, 0);
+  // Сколько ячеек занимает картинка
+  const cellsX = Math.ceil(targetW / cellW);
+  const cellsY = Math.ceil(targetH / cellH);
 
-    // Try to find a non-overlapping position; if fails, place anyway to ensure visibility
-    do {
-      leftPx = Math.random() * maxLeft;
-      topPx = Math.random() * maxTop;
-      rect = { left: leftPx, top: topPx, right: leftPx + targetW, bottom: topPx + targetH };
-      tries++;
-    } while (isOverlapping(rect, placedRects, margin) && tries < 200);
+  let found = false;
+  let gx = 0, gy = 0;
 
-    img.style.left = `${leftPx}px`;
-    img.style.top = `${topPx}px`;
-    img.style.visibility = "visible";
+  // Ищем свободное место
+  for (let attempt = 0; attempt < 500 && !found; attempt++) {
+    gx = randomInt(0, gridSize - cellsX);
+    gy = randomInt(0, gridSize - cellsY);
 
-    placedRects.push(rect);
-  };
-
-  // Fire when loaded; if it errors or loads too slowly, still compute layout after a small delay
-  img.onload = onReady;
-  img.onerror = () => {
-    // Remove broken image to avoid gaps
-    img.remove();
-  };
-  // Fallback: ensure layout runs even if onload doesn't fire quickly
-  setTimeout(() => {
-    if (document.body.contains(img) && img.style.visibility === "hidden") onReady();
-  }, 300);
-}
-
-// ===== Scene generation =====
-function generateScene() {
-  try {
-    currentCount = randomInt(MIN_IMAGES, MAX_IMAGES);
-
-    // Clear image zone
-    imageZone.innerHTML = "";
-
-    const perCategory = distributeCountsEvenly(currentCount, SIZE_CATEGORIES_VH.length);
-    const placedRects = [];
-
-    // Create images per category
-    for (let c = 0; c < SIZE_CATEGORIES_VH.length; c++) {
-      const sizeVh = SIZE_CATEGORIES_VH[c];
-      for (let i = 0; i < perCategory[c]; i++) {
-        const src = ICON_PATHS[randomInt(0, ICON_PATHS.length - 1)];
-        placeImage(src, sizeVh, placedRects);
+    let overlap = false;
+    for (let y = gy; y < gy + cellsY; y++) {
+      for (let x = gx; x < gx + cellsX; x++) {
+        if (occupiedCells[y] && occupiedCells[y][x]) {
+          overlap = true;
+          break;
+        }
       }
+      if (overlap) break;
     }
 
-    renderButtons();
-  } catch (e) {
-    // Minimal in-app fallback to ensure buttons still render
-    currentCount = 0;
-    imageZone.innerHTML = "";
-    renderButtons();
+    if (!overlap) {
+      found = true;
+      // помечаем занятые ячейки
+      for (let y = gy; y < gy + cellsY; y++) {
+        if (!occupiedCells[y]) occupiedCells[y] = [];
+        for (let x = gx; x < gx + cellsX; x++) {
+          occupiedCells[y][x] = true;
+        }
+      }
+    }
   }
+
+  // Координаты картинки
+  const leftPx = gx * cellW + randomInt(-5, 5);
+  const topPx = gy * cellH + randomInt(-5, 5);
+
+  img.style.left = `${leftPx}px`;
+  img.style.top = `${topPx}px`;
+
+  imageZone.appendChild(img);
 }
 
-// ===== Buttons generation =====
+// ===== Генерация сцены =====
+function generateScene() {
+  currentCount = randomInt(MIN_IMAGES, MAX_IMAGES);
+  imageZone.innerHTML = "";
+
+  const perCategory = distributeCountsEvenly(currentCount, SIZE_CATEGORIES_VH.length);
+  const occupiedCells = [];
+
+  for (let c = 0; c < SIZE_CATEGORIES_VH.length; c++) {
+    const sizeVh = SIZE_CATEGORIES_VH[c];
+    for (let i = 0; i < perCategory[c]; i++) {
+      const src = ICON_PATHS[randomInt(0, ICON_PATHS.length - 1)];
+      placeImage(src, sizeVh, occupiedCells);
+    }
+  }
+
+  renderButtons();
+}
+
+// ===== Генерация кнопок =====
 function renderButtons() {
   buttonsContainer.innerHTML = "";
 
-  // Ensure we always have a valid currentCount for options
-  const answer = currentCount >= MIN_IMAGES ? currentCount : randomInt(MIN_IMAGES, MAX_IMAGES);
-
+  const answer = currentCount;
   const candidates = new Set([answer]);
   while (candidates.size < 5) candidates.add(randomInt(MIN_IMAGES, MAX_IMAGES));
 
@@ -161,7 +151,7 @@ function renderButtons() {
   });
 }
 
-// ===== Init =====
+// ===== Инициализация =====
 function init() {
   generateScene();
   window.addEventListener("resize", () => {
