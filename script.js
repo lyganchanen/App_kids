@@ -16,6 +16,10 @@ const ICON_PATHS = [
   "icons/icon4.png",
   "icons/icon5.png",
   "icons/icon6.png"
+    "icons/icon7.png"
+  "icons/icon8.png"
+  "icons/icon9.png"
+  "icons/icon10.png"
 ];
 
 // Диапазон количества картинок
