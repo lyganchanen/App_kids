@@ -22,6 +22,8 @@ html, body {
   width: 95vw;
   height: 80vh;
   overflow: hidden;
+  padding-left: 10px;   /* отступ слева */
+  padding-right: 10px;  /* отступ справа */
 }
 
 /* Positioned images */
@@ -39,6 +41,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-bottom: 10px; /* отступ от нижнего края */
 }
 
 #buttons {
