@@ -67,47 +67,54 @@ function distributeCountsEvenly(n, categories) {
   Создаёт одну картинку с абсолютным позиционированием.
   Гарантирует, что картинка целиком помещается в рабочей зоне.
 */
-function createImageElement(src, vhSize) {
+function createImageElement(src, vhSize, placedRects) {
   const img = document.createElement("img");
   img.src = src;
   img.className = "image-item";
-
-  // Переводим высоту из vh в пиксели
-  const zoneHeightPx = imageZone.clientHeight;
-  const zoneWidthPx = imageZone.clientWidth;
-  const targetHeightPx = zoneHeightPx * (vhSize / 100);
-
-  // Чтобы рассчитать позиции, нужно знать размеры. Сначала поставим временно невидимой.
-  img.style.visibility = "hidden";
   img.style.height = `${vhSize}vh`;
+  img.style.position = "absolute";
+  img.style.visibility = "hidden";
 
-  // Вставляем в DOM для получения натуральной ширины после масштабирования
   imageZone.appendChild(img);
 
-  // Как только загрузится, позиционируем
   img.onload = () => {
+    const zoneHeightPx = imageZone.clientHeight;
+    const zoneWidthPx = imageZone.clientWidth;
+    const targetHeightPx = zoneHeightPx * (vhSize / 100);
     const aspectRatio = img.naturalWidth / img.naturalHeight || 1;
     const targetWidthPx = targetHeightPx * aspectRatio;
 
-    // Случайная позиция, но так, чтобы картинка не выходила за пределы
-    const maxLeftPx = Math.max(zoneWidthPx - targetWidthPx, 0);
-    const maxTopPx = Math.max(zoneHeightPx - targetHeightPx, 0);
+    let leftPx, topPx, rect, tries = 0;
+    const margin = 5; // минимальное расстояние между картинками
 
-    const leftPx = Math.random() * maxLeftPx;
-    const topPx = Math.random() * maxTopPx;
+    do {
+      leftPx = Math.random() * Math.max(zoneWidthPx - targetWidthPx, 0);
+      topPx = Math.random() * Math.max(zoneHeightPx - targetHeightPx, 0);
+      rect = { left: leftPx, top: topPx, right: leftPx + targetWidthPx, bottom: topPx + targetHeightPx };
+      tries++;
+    } while (
+      placedRects.some(r =>
+        !(rect.right + margin < r.left ||
+          rect.left - margin > r.right ||
+          rect.bottom + margin < r.top ||
+          rect.top - margin > r.bottom)
+      ) && tries < 100
+    );
 
     img.style.left = `${leftPx}px`;
     img.style.top = `${topPx}px`;
     img.style.visibility = "visible";
+
+    placedRects.push(rect);
   };
 
-  // Если ошибка загрузки — удаляем элемент, чтобы не было "битых" картинок
   img.onerror = () => {
     img.remove();
   };
 
   return img;
 }
+
 
 /*
   Генерация сцены:
@@ -118,28 +125,23 @@ function createImageElement(src, vhSize) {
   - генерируем кнопки
 */
 function generateScene() {
-  // Случайное количество картинок
   currentCount = randomInt(MIN_IMAGES, MAX_IMAGES);
-
-  // Очистка зоны изображений
   imageZone.innerHTML = "";
 
-  // Распределение количества по 5 размерам
   const perCategory = distributeCountsEvenly(currentCount, SIZE_CATEGORIES_VH.length);
+  const placedRects = []; // сюда будем сохранять позиции картинок
 
-  // Для каждой категории создаём соответствующее количество картинок
   for (let c = 0; c < SIZE_CATEGORIES_VH.length; c++) {
     const sizeVh = SIZE_CATEGORIES_VH[c];
     for (let i = 0; i < perCategory[c]; i++) {
       const src = ICON_PATHS[randomInt(0, ICON_PATHS.length - 1)];
-      const imgEl = createImageElement(src, sizeVh);
-      // createImageElement сам добавляет элемент в imageZone
+      createImageElement(src, sizeVh, placedRects);
     }
   }
 
-  // Генерация кнопок
   renderButtons();
 }
+
 
 /*
   Генерация пяти кнопок:
