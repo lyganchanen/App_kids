@@ -1,40 +1,28 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <link rel="manifest" href="manifest.json">
-  <title>Моё приложение</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      background-color: #d3d3d3; /* светло-серый фон */
-      font-family: Arial, sans-serif;
-      overflow: hidden; /* убираем прокрутку */
-    }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Счёт картинок</title>
 
-    .app-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      width: 100%;
-    }
+  <!-- Цвета и базовый PWA-манифест (по желанию, можешь удалить если уже есть свой) -->
+  <link rel="manifest" href="manifest.json" />
 
-    h1 {
-      color: #333;
-      font-size: 2.5rem;
-      text-align: center;
-    }
-  </style>
+  <!-- Стили -->
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app-container">
-    <h1>Добро пожаловать в моё приложение!</h1>
+  <div id="app">
+    <!-- Верхняя зона: 80% высоты экрана -->
+    <section id="image-zone" aria-label="Зона изображений"></section>
+
+    <!-- Нижняя зона: 20% высоты экрана, 5 кнопок -->
+    <section id="control-zone" aria-label="Зона управления">
+      <div id="buttons"></div>
+    </section>
   </div>
+
+  <!-- Скрипты -->
+  <script src="script.js"></script>
 </body>
 </html>
-
