@@ -1,12 +1,12 @@
-/* Базовая раскладка на полный экран */
+/* Layout baseline */
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
   width: 100%;
-  background-color: #d3d3d3; /* светло-серый фон */
+  background-color: #d3d3d3; /* light gray background */
   font-family: Arial, sans-serif;
-  overflow: hidden; /* статичная страница, без прокрутки */
+  overflow: hidden; /* fixed page without scroll */
 }
 
 #app {
@@ -16,35 +16,34 @@ html, body {
   flex-direction: column;
 }
 
-/* Верхняя зона с картинками (80% высоты, 100% ширины) */
+/* Top image zone: 80% height */
 #image-zone {
   position: relative;
   width: 100vw;
   height: 80vh;
-  overflow: hidden; /* чтобы изображения не выходили за пределы */
+  overflow: hidden;
 }
 
-/* Абсолютное позиционирование картинок внутри верхней зоны */
+/* Positioned images */
 .image-item {
   position: absolute;
   object-fit: contain;
-  pointer-events: none; /* исключаем случайные клики по картинке */
+  pointer-events: none;
 }
 
-/* Нижняя зона с кнопками (20% высоты) */
+/* Bottom control zone: 20% height */
 #control-zone {
   height: 20vh;
   width: 100vw;
-  background-color: #c0c0c0; /* лёгкий контраст с верхом */
+  background-color: #c0c0c0; /* subtle contrast */
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Контейнер для пяти кнопок: равные отступы и адаптивная ширина */
 #buttons {
   display: flex;
-  gap: 2vw; /* интервалы между кнопками */
+  gap: 2vw;
   align-items: center;
   justify-content: center;
   height: 100%;
@@ -52,21 +51,14 @@ html, body {
   padding: 0 2vw;
 }
 
-/*
-  Кнопки:
-  - Тёмно-серый фон
-  - Чёрные цифры
-  - Цифры занимают ~80% высоты кнопки
-  - По высоте — заполняют нижнюю зону (20vh)
-  - По ширине — близка к высоте (слегка прямоугольные, чтобы не идеально квадратные)
-*/
+/* Buttons: dark gray background, black digits, large font */
 .count-btn {
-  background-color: #4a4a4a; /* тёмно-серый */
-  color: #000000; /* чёрные цифры */
+  background-color: #4a4a4a; /* dark gray */
+  color: #000000; /* black digits */
   border: none;
   border-radius: 2vh;
-  height: calc(100% - 4vh); /* небольшой внутренний отступ, чтобы не упираться */
-  aspect-ratio: 1.2 / 1; /* ширина чуть больше высоты, не квадратная */
+  height: calc(100% - 4vh); /* some breathing room */
+  aspect-ratio: 1.2 / 1; /* slightly wider than tall (not square) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -74,15 +66,13 @@ html, body {
   cursor: pointer;
 }
 
-/* Крупный размер цифры: около 80% высоты кнопки */
 .count-btn span {
   font-weight: 700;
   line-height: 1;
-  font-size: 16vh; /* 80% от 20vh = 16vh */
-  transform: translateY(0.02em); /* лёгкая коррекция вертикального выравнивания */
+  font-size: 16vh; /* ~80% of 20vh */
+  transform: translateY(0.02em);
 }
 
-/* Состояние фокуса/активации для доступности */
 .count-btn:focus-visible {
   outline: 0.6vh solid #000;
 }
