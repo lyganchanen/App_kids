@@ -1,20 +1,20 @@
-// === Конфигурация ===
-const ICON_COUNT = 10; // сколько картинок у тебя в папке icons
+// ===== Config =====
+const ICON_COUNT = 10; // number of images in /icons folder
 const ICON_PATHS = Array.from({ length: ICON_COUNT }, (_, i) => `icons/icon${i + 1}.png`);
 
 const MIN_IMAGES = 1;
 const MAX_IMAGES = 20;
 
-// 5 категорий размеров (в процентах от высоты зоны)
+// 5 size categories in vh (relative to image zone height)
 const SIZE_CATEGORIES_VH = [6, 10, 14, 18, 22];
 
-// DOM элементы
+// DOM elements
 const imageZone = document.getElementById("image-zone");
 const buttonsContainer = document.getElementById("buttons");
 
 let currentCount = 0;
 
-// === Вспомогательные функции ===
+// ===== Utilities =====
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -31,13 +31,10 @@ function distributeCountsEvenly(n, categories) {
   const base = Math.floor(n / categories);
   const remainder = n % categories;
   const result = new Array(categories).fill(base);
-  for (let i = 0; i < remainder; i++) {
-    result[i] += 1;
-  }
+  for (let i = 0; i < remainder; i++) result[i] += 1;
   return shuffle(result);
 }
 
-// Проверка пересечения с учётом отступа
 function isOverlapping(rect, placedRects, margin) {
   return placedRects.some(r =>
     !(rect.right + margin < r.left ||
@@ -47,8 +44,8 @@ function isOverlapping(rect, placedRects, margin) {
   );
 }
 
-// Создание картинки с проверкой пересечений
-function createImageElement(src, vhSize, placedRects) {
+// ===== Image creation with spacing =====
+function placeImage(src, vhSize, placedRects) {
   const img = document.createElement("img");
   img.src = src;
   img.className = "image-item";
@@ -58,27 +55,30 @@ function createImageElement(src, vhSize, placedRects) {
 
   imageZone.appendChild(img);
 
-  img.onload = () => {
-    const zoneHeightPx = imageZone.clientHeight;
-    const zoneWidthPx = imageZone.clientWidth;
-    const targetHeightPx = zoneHeightPx * (vhSize / 100);
-    const aspectRatio = img.naturalWidth / img.naturalHeight || 1;
-    const targetWidthPx = targetHeightPx * aspectRatio;
+  const onReady = () => {
+    const zoneH = imageZone.clientHeight;
+    const zoneW = imageZone.clientWidth;
+    const targetH = zoneH * (vhSize / 100);
 
-    let leftPx, topPx, rect, tries = 0;
+    // Natural sizes may be 0 if metadata is missing; guard with defaults
+    const natW = img.naturalWidth || 100;
+    const natH = img.naturalHeight || 100;
+    const aspect = natW / natH;
+    const targetW = targetH * aspect;
+
+    let leftPx, topPx, rect;
+    let tries = 0;
     const margin = 5;
+    const maxLeft = Math.max(zoneW - targetW, 0);
+    const maxTop = Math.max(zoneH - targetH, 0);
 
+    // Try to find a non-overlapping position; if fails, place anyway to ensure visibility
     do {
-      leftPx = Math.random() * Math.max(zoneWidthPx - targetWidthPx, 0);
-      topPx = Math.random() * Math.max(zoneHeightPx - targetHeightPx, 0);
-      rect = {
-        left: leftPx,
-        top: topPx,
-        right: leftPx + targetWidthPx,
-        bottom: topPx + targetHeightPx
-      };
+      leftPx = Math.random() * maxLeft;
+      topPx = Math.random() * maxTop;
+      rect = { left: leftPx, top: topPx, right: leftPx + targetW, bottom: topPx + targetH };
       tries++;
-    } while (isOverlapping(rect, placedRects, margin) && tries < 100);
+    } while (isOverlapping(rect, placedRects, margin) && tries < 200);
 
     img.style.left = `${leftPx}px`;
     img.style.top = `${topPx}px`;
@@ -87,41 +87,59 @@ function createImageElement(src, vhSize, placedRects) {
     placedRects.push(rect);
   };
 
+  // Fire when loaded; if it errors or loads too slowly, still compute layout after a small delay
+  img.onload = onReady;
   img.onerror = () => {
+    // Remove broken image to avoid gaps
     img.remove();
   };
+  // Fallback: ensure layout runs even if onload doesn't fire quickly
+  setTimeout(() => {
+    if (document.body.contains(img) && img.style.visibility === "hidden") onReady();
+  }, 300);
 }
 
-// === Генерация сцены ===
+// ===== Scene generation =====
 function generateScene() {
-  currentCount = randomInt(MIN_IMAGES, MAX_IMAGES);
-  imageZone.innerHTML = "";
+  try {
+    currentCount = randomInt(MIN_IMAGES, MAX_IMAGES);
 
-  const perCategory = distributeCountsEvenly(currentCount, SIZE_CATEGORIES_VH.length);
-  const placedRects = [];
+    // Clear image zone
+    imageZone.innerHTML = "";
 
-  for (let c = 0; c < SIZE_CATEGORIES_VH.length; c++) {
-    const sizeVh = SIZE_CATEGORIES_VH[c];
-    for (let i = 0; i < perCategory[c]; i++) {
-      const src = ICON_PATHS[randomInt(0, ICON_PATHS.length - 1)];
-      createImageElement(src, sizeVh, placedRects);
+    const perCategory = distributeCountsEvenly(currentCount, SIZE_CATEGORIES_VH.length);
+    const placedRects = [];
+
+    // Create images per category
+    for (let c = 0; c < SIZE_CATEGORIES_VH.length; c++) {
+      const sizeVh = SIZE_CATEGORIES_VH[c];
+      for (let i = 0; i < perCategory[c]; i++) {
+        const src = ICON_PATHS[randomInt(0, ICON_PATHS.length - 1)];
+        placeImage(src, sizeVh, placedRects);
+      }
     }
-  }
 
-  renderButtons();
+    renderButtons();
+  } catch (e) {
+    // Minimal in-app fallback to ensure buttons still render
+    currentCount = 0;
+    imageZone.innerHTML = "";
+    renderButtons();
+  }
 }
 
-// === Генерация кнопок ===
+// ===== Buttons generation =====
 function renderButtons() {
   buttonsContainer.innerHTML = "";
 
-  const candidates = new Set();
-  candidates.add(currentCount);
-  while (candidates.size < 5) {
-    candidates.add(randomInt(MIN_IMAGES, MAX_IMAGES));
-  }
+  // Ensure we always have a valid currentCount for options
+  const answer = currentCount >= MIN_IMAGES ? currentCount : randomInt(MIN_IMAGES, MAX_IMAGES);
+
+  const candidates = new Set([answer]);
+  while (candidates.size < 5) candidates.add(randomInt(MIN_IMAGES, MAX_IMAGES));
 
   const values = shuffle([...candidates]);
+
   values.forEach((val) => {
     const btn = document.createElement("button");
     btn.className = "count-btn";
@@ -131,7 +149,7 @@ function renderButtons() {
     btn.appendChild(label);
 
     btn.addEventListener("click", () => {
-      if (val === currentCount) {
+      if (val === answer) {
         generateScene();
       } else {
         btn.style.filter = "brightness(0.8)";
@@ -143,7 +161,7 @@ function renderButtons() {
   });
 }
 
-// === Инициализация ===
+// ===== Init =====
 function init() {
   generateScene();
   window.addEventListener("resize", () => {
