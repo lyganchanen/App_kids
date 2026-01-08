@@ -30,7 +30,10 @@ html, body {
 .image-item {
   position: absolute;
   object-fit: contain;
-  pointer-events: none;
+  /* pointer-events: none;  <-- вот это мешает */
+  cursor: pointer; /* добавим курсор */
+  opacity: 1;
+  transition: opacity 0.5s ease;
 }
 
 /* Bottom control zone: 20% height */
