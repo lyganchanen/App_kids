@@ -32,6 +32,7 @@ function distributeCountsEvenly(n, categories) {
 }
 
 // ===== Размещение картинки =====
+// ===== Размещение картинки =====
 function placeImage(src, vhSize, occupiedCells, gridSize = 40) {
   const img = document.createElement("img");
   img.src = src;
@@ -86,10 +87,13 @@ function placeImage(src, vhSize, occupiedCells, gridSize = 40) {
   img.style.left = `${leftPx}px`;
   img.style.top = `${topPx}px`;
 
-  // при клике картинка исчезает
+  // 🔹 вот здесь добавляем обработчик клика
   img.addEventListener("click", () => {
-    img.remove();
+    img.style.transition = "opacity 0.5s ease";
+    img.style.opacity = "0";
+    setTimeout(() => img.remove(), 500);
   });
+
 
   imageZone.appendChild(img);
   currentImages.push(img);
