@@ -79,3 +79,18 @@ html, body {
 .count-btn:focus-visible {
   outline: 0.6vh solid #000;
 }
+.image-item {
+  position: absolute;
+  object-fit: contain;
+  cursor: pointer; /* теперь кликабельные */
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+.image-item.hidden {
+  opacity: 0;
+}
+
+.image-item.fade-in {
+  opacity: 1;
+}
