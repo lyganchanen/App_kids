@@ -1,24 +1,21 @@
 // ===== Конфигурация =====
-const ICON_COUNT = 10; // количество картинок в папке /icons
+const ICON_COUNT = 10;
 const ICON_PATHS = Array.from({ length: ICON_COUNT }, (_, i) => `icons/icon${i + 1}.png`);
 
 const MIN_IMAGES = 1;
 const MAX_IMAGES = 20;
-
-// 5 категорий размеров (в процентах от высоты зоны)
 const SIZE_CATEGORIES_VH = [6, 10, 14, 18, 22];
 
-// DOM элементы
 const imageZone = document.getElementById("image-zone");
 const buttonsContainer = document.getElementById("buttons");
 
 let currentCount = 0;
+let currentImages = []; // сохраняем ссылки на картинки
 
-// ===== Вспомогательные функции =====
+// ===== Вспомогательные =====
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = randomInt(0, i);
@@ -26,7 +23,6 @@ function shuffle(array) {
   }
   return array;
 }
-
 function distributeCountsEvenly(n, categories) {
   const base = Math.floor(n / categories);
   const remainder = n % categories;
@@ -35,13 +31,12 @@ function distributeCountsEvenly(n, categories) {
   return shuffle(result);
 }
 
-// ===== Размещение картинки по сетке =====
+// ===== Размещение картинки =====
 function placeImage(src, vhSize, occupiedCells, gridSize = 40) {
   const img = document.createElement("img");
   img.src = src;
-  img.className = "image-item";
+  img.className = "image-item hidden"; // скрыта изначально
   img.style.height = `${vhSize}vh`;
-  img.style.position = "absolute";
 
   const zoneH = imageZone.clientHeight;
   const zoneW = imageZone.clientWidth;
@@ -52,18 +47,13 @@ function placeImage(src, vhSize, occupiedCells, gridSize = 40) {
   const aspect = natW / natH;
   const targetW = targetH * aspect;
 
-  // Размер ячейки
   const cellW = zoneW / gridSize;
   const cellH = zoneH / gridSize;
 
-  // Сколько ячеек занимает картинка
   const cellsX = Math.ceil(targetW / cellW);
   const cellsY = Math.ceil(targetH / cellH);
 
-  let found = false;
-  let gx = 0, gy = 0;
-
-  // Ищем свободное место
+  let gx = 0, gy = 0, found = false;
   for (let attempt = 0; attempt < 500 && !found; attempt++) {
     gx = randomInt(0, gridSize - cellsX);
     gy = randomInt(0, gridSize - cellsY);
@@ -81,7 +71,6 @@ function placeImage(src, vhSize, occupiedCells, gridSize = 40) {
 
     if (!overlap) {
       found = true;
-      // помечаем занятые ячейки
       for (let y = gy; y < gy + cellsY; y++) {
         if (!occupiedCells[y]) occupiedCells[y] = [];
         for (let x = gx; x < gx + cellsX; x++) {
@@ -91,20 +80,26 @@ function placeImage(src, vhSize, occupiedCells, gridSize = 40) {
     }
   }
 
-  // Координаты картинки
   const leftPx = gx * cellW + randomInt(-5, 5);
   const topPx = gy * cellH + randomInt(-5, 5);
 
   img.style.left = `${leftPx}px`;
   img.style.top = `${topPx}px`;
 
+  // при клике картинка исчезает
+  img.addEventListener("click", () => {
+    img.remove();
+  });
+
   imageZone.appendChild(img);
+  currentImages.push(img);
 }
 
 // ===== Генерация сцены =====
 function generateScene() {
   currentCount = randomInt(MIN_IMAGES, MAX_IMAGES);
   imageZone.innerHTML = "";
+  currentImages = [];
 
   const perCategory = distributeCountsEvenly(currentCount, SIZE_CATEGORIES_VH.length);
   const occupiedCells = [];
@@ -117,7 +112,18 @@ function generateScene() {
     }
   }
 
+  animateImages(); // анимация появления
   renderButtons();
+}
+
+// ===== Анимация появления =====
+function animateImages() {
+  currentImages.forEach((img, idx) => {
+    setTimeout(() => {
+      img.classList.remove("hidden");
+      img.classList.add("fade-in");
+    }, idx * (3000 / currentImages.length)); // равномерно за 3 сек
+  });
 }
 
 // ===== Генерация кнопок =====
@@ -140,10 +146,19 @@ function renderButtons() {
 
     btn.addEventListener("click", () => {
       if (val === answer) {
-        generateScene();
+        imageZone.style.backgroundColor = "lightgreen";
+        setTimeout(() => {
+          imageZone.style.backgroundColor = "";
+          generateScene();
+        }, 1000);
       } else {
-        btn.style.filter = "brightness(0.8)";
-        setTimeout(() => (btn.style.filter = ""), 200);
+        imageZone.style.backgroundColor = "lightcoral";
+        setTimeout(() => {
+          imageZone.style.backgroundColor = "";
+          // вернуть все картинки
+          imageZone.innerHTML = "";
+          currentImages.forEach(img => imageZone.appendChild(img));
+        }, 1000);
       }
     });
 
@@ -158,5 +173,4 @@ function init() {
     generateScene();
   });
 }
-
 document.addEventListener("DOMContentLoaded", init);
